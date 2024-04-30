@@ -1,0 +1,60 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsRegressor
+import matplotlib.pyplot as plt
+
+# Load the dataset
+file_path = r'C:\Users\DELL\Downloads\simulated_data_final.csv'
+data = pd.read_csv(file_path)
+
+# Feature engineering: Extract year, month, and day from the 'Date' column
+data['Date'] = pd.to_datetime(data['Date'])
+data['Year'] = data['Date'].dt.year
+data['Month'] = data['Date'].dt.month
+data['Day'] = data['Date'].dt.day
+
+# Select features and target variable
+X = data[['Year', 'Month', 'Day']]
+y = data['Price']  # Assuming 'Price' is the correct target variable column
+
+# Split the data into training and a combined set of validation and test sets
+X_train, X_combined, y_train, y_combined = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Further split the combined validation and test set into validation and test sets
+X_validation, X_test, y_validation, y_test = train_test_split(X_combined, y_combined, test_size=0.2, random_state=42)
+
+# Initialize KNN regressor
+knn_regressor = KNeighborsRegressor(n_neighbors=3)
+
+# Train the model
+knn_regressor.fit(X_train, y_train)
+
+# Make predictions on the validation set
+predictions_validation = knn_regressor.predict(X_validation)
+
+# Make predictions on the test set
+predictions_test = knn_regressor.predict(X_test)
+
+# Create index for validation and test sets
+validation_index = range(len(y_validation))
+test_index = range(len(y_validation), len(y_validation) + len(y_test))
+
+# Create line plots of actual versus predicted values for validation set
+plt.figure(figsize=(10, 6))
+plt.plot(validation_index, y_validation, color='red', label='Actual (Validation)', marker='o')
+plt.plot(validation_index, predictions_validation, color='blue', label='Predictions (Validation)', marker='s')
+plt.xlabel('Index')
+plt.ylabel('Price')
+plt.legend()
+plt.title('Actual vs. Predicted Price with Simulated Stock Price (Validation)')
+plt.show()
+
+# Create line plots of actual versus predicted values for test set
+plt.figure(figsize=(10, 6))
+plt.plot(test_index, y_test, color='red', label='Actual (Test)', marker='o')
+plt.plot(test_index, predictions_test, color='green', label='Predictions (Test)', marker='s')
+plt.xlabel('Index')
+plt.ylabel('Price')
+plt.legend()
+plt.title('Actual vs. Predicted Price with Simulated Stock Price  (Test)')
+plt.show()
