@@ -1,0 +1,80 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error, accuracy_score
+import numpy as np
+
+# Read data from CSV file
+file_path = r'C:\Users\DELL\Downloads\simulated_data_final.csv'
+df = pd.read_csv(file_path)
+df['Date'] = pd.to_datetime(df['Date'])
+df.set_index('Date', inplace=True)
+
+# Calculate 10-day and 50-day EMAs
+short_window = 10
+long_window = 50
+df['Short_EMA'] = df['Price'].ewm(span=short_window, adjust=False).mean()
+df['Long_EMA'] = df['Price'].ewm(span=long_window, adjust=False).mean()
+
+# Calculate Mean Squared Error (MSE) and Root Mean Squared Error (RMSE)
+mse_short_ema = mean_squared_error(df['Price'], df['Short_EMA'])
+rmse_short_ema = np.sqrt(mse_short_ema)
+
+mse_long_ema = mean_squared_error(df['Price'], df['Long_EMA'])
+rmse_long_ema = np.sqrt(mse_long_ema)
+
+print(f"Mean Squared Error (Short EMA): {mse_short_ema}")
+print(f"Mean Squared Error (Long EMA): {mse_long_ema}")
+print(f"Root Mean Squared Error (Short EMA): {rmse_short_ema}")
+print(f"Root Mean Squared Error (Long EMA): {rmse_long_ema}")
+
+# Calculate Mean Absolute Error (MAE)
+mae_short_ema = np.mean(np.abs(df['Price'] - df['Short_EMA']))
+mae_long_ema = np.mean(np.abs(df['Price'] - df['Long_EMA']))
+
+print(f"Mean Absolute Error (Short EMA): {mae_short_ema}")
+print(f"Mean Absolute Error (Long EMA): {mae_long_ema}")
+
+# Calculate R-squared (R^2)
+r_squared_short_ema = 1 - (np.sum((df['Price'] - df['Short_EMA'])**2) / np.sum((df['Price'] - np.mean(df['Price']))**2))
+r_squared_long_ema = 1 - (np.sum((df['Price'] - df['Long_EMA'])**2) / np.sum((df['Price'] - np.mean(df['Price']))**2))
+
+print(f"R-squared (Short EMA): {r_squared_short_ema}")
+print(f"R-squared (Long EMA): {r_squared_long_ema}")
+
+# Calculate Mean Absolute Percentage Error (MAPE)
+mape_short_ema = np.mean(np.abs((df['Price'] - df['Short_EMA']) / df['Price'])) * 100
+mape_long_ema = np.mean(np.abs((df['Price'] - df['Long_EMA']) / df['Price'])) * 100
+
+print(f"MAPE (Short EMA): {mape_short_ema:.2f}%")
+print(f"MAPE (Long EMA): {mape_long_ema:.2f}%")
+
+# Calculate accuracy of buy/sell signals
+buy_signals_actual = df['Price'] < df['Short_EMA']
+buy_signals_predicted = df['Short_EMA'] > df['Long_EMA']
+accuracy_buy_signals = accuracy_score(buy_signals_actual, buy_signals_predicted)
+
+sell_signals_actual = df['Price'] > df['Short_EMA']
+sell_signals_predicted = df['Short_EMA'] < df['Long_EMA']
+accuracy_sell_signals = accuracy_score(sell_signals_actual, sell_signals_predicted)
+
+print(f"Accuracy of Buy Signals: {accuracy_buy_signals}")
+print(f"Accuracy of Sell Signals: {accuracy_sell_signals}")
+
+# Plotting
+plt.figure(figsize=(12, 6))
+plt.plot(df.index, df['Price'], label='Stock Price')
+plt.plot(df.index, df['Short_EMA'], label=f'Short EMA ({short_window} days)')
+plt.plot(df.index, df['Long_EMA'], label=f'Long EMA ({long_window} days)')
+
+# Plotting crossovers
+buy_signals = df[df['Short_EMA'] > df['Long_EMA']]
+sell_signals = df[df['Short_EMA'] < df['Long_EMA']]
+
+plt.scatter(buy_signals.index, buy_signals['Short_EMA'], marker='^', color='g', label='Buy Signal')
+plt.scatter(sell_signals.index, sell_signals['Short_EMA'], marker='v', color='r', label='Sell Signal')
+
+plt.title('Simulated Stock Price and Exponential Moving Averages')
+plt.xlabel('Date')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
